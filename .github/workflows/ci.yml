@@ -1,0 +1,51 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  javascript:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node: [20, 22]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+      - run: node --test
+      - name: Host time zone has no effect
+        run: |
+          TZ=Pacific/Kiritimati node --test
+          TZ=UTC node --test
+      - name: README examples
+        run: node scripts/check-examples.mjs js
+
+  php:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        php: ["8.1", "8.4"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          coverage: none
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: php php/tests/run.php
+      - name: Host time zone has no effect
+        run: |
+          php -d date.timezone=Pacific/Kiritimati php/tests/run.php
+          php -d date.timezone=UTC php/tests/run.php
+      - name: README examples
+        run: |
+          composer dump-autoload
+          node scripts/check-examples.mjs php
