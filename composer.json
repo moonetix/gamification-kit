@@ -1,0 +1,19 @@
+{
+    "name": "moonetix/gamification-kit",
+    "description": "Streaks, XP levels, quests, leaderboards and caps that stay correct across time zones and DST.",
+    "type": "library",
+    "license": "MIT",
+    "homepage": "https://moonetix.com/academy/monetization/rewards-app-retention",
+    "keywords": ["gamification", "streaks", "xp", "leaderboard", "quests", "timezone"],
+    "require": {
+        "php": ">=8.1"
+    },
+    "autoload": {
+        "psr-4": {
+            "Moonetix\\Gamification\\": "php/src/"
+        }
+    },
+    "scripts": {
+        "test": "php php/tests/run.php"
+    }
+}
