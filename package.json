@@ -1,0 +1,43 @@
+{
+  "name": "gamification-kit",
+  "version": "1.0.0",
+  "description": "Streaks, XP levels, quests, leaderboards and caps that stay correct across time zones and DST. JavaScript and PHP.",
+  "type": "module",
+  "main": "./src/index.js",
+  "types": "./src/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.d.ts",
+      "default": "./src/index.js"
+    }
+  },
+  "files": [
+    "src/",
+    "test-vectors/vectors.json"
+  ],
+  "scripts": {
+    "test": "node --test",
+    "test:php": "php php/tests/run.php",
+    "examples": "node scripts/check-examples.mjs js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "keywords": [
+    "gamification",
+    "streaks",
+    "daily-check-in",
+    "xp",
+    "leveling",
+    "leaderboard",
+    "quests",
+    "timezone"
+  ],
+  "homepage": "https://moonetix.com/academy/monetization/rewards-app-retention",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/moonetix/gamification-kit.git"
+  },
+  "license": "MIT",
+  "author": "Moonetix (https://moonetix.com)"
+}
