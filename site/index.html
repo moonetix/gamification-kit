@@ -29,113 +29,215 @@
     <h1>Daily streaks that stay correct across time zones and DST</h1>
     <p>Move the clock, skip days, fly across zones and cross daylight saving changes. Every streak, level, quest and rank on this page is computed in your browser by the library's own code from <code>src/</code>.</p>
     <p class="chips"><span class="chip">Zero dependencies</span> <span class="chip">JavaScript and PHP</span> <span class="chip">{{VECTOR_COUNT}} shared test vectors</span></p>
+    <div class="hero-cta">
+      <a class="btn primary" href="#play">Open the playground</a>
+      <a class="btn" href="https://moonetix.com/academy/monetization/rewards-app-retention?from=github-pages-gamification-kit">Read the guide</a>
+    </div>
   </section>
 
-  <section class="card scen" aria-labelledby="scen-h">
-    <h2 id="scen-h">Try a scenario</h2>
-    <div class="btns" id="scenarios"></div>
-    <p class="hint" id="hint" aria-live="polite"></p>
+  <section class="sec" aria-labelledby="for-h">
+    <div class="sec-head">
+      <h2 id="for-h">What it is for</h2>
+      <p>Engagement mechanics for a rewards app, site, game or community, computed in each user's own time zone.</p>
+    </div>
+    <ul class="uses">
+      <li class="card use">
+        <div class="card-h"><span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="15" rx="2.5"/><path d="M8 3v4M16 3v4M4 10h16M9 15l2 2 4-4"/></svg></span><h3>Daily check-in streaks</h3></div>
+        <p>Count one check-in per local day in each user's time zone, with freezes and a grace window, so travel and clock changes do not break a streak the user kept.</p>
+      </li>
+      <li class="card use">
+        <div class="card-h"><span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 20v-5M12 20V10M19 20V4"/></svg></span><h3>XP levels and daily caps</h3></div>
+        <p>Turn XP into a level, the XP left to the next one and a progress value, and cap how much XP an account can collect per day.</p>
+      </li>
+      <li class="card use">
+        <div class="card-h"><span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4h8v5a4 4 0 0 1-8 0V4zM8 6H5a3 3 0 0 0 3 3M16 6h3a3 3 0 0 1-3 3M12 13v4M8.5 20h7"/></svg></span><h3>Quests and leaderboards</h3></div>
+        <p>Run daily, weekly or monthly quests that reset at the user's local day start, and rank a weekly leaderboard with a tie rule you pick.</p>
+      </li>
+    </ul>
   </section>
 
-  <div class="play">
-    <section class="card" aria-labelledby="clock-h">
-      <h2 id="clock-h">User's clock</h2>
-      <p class="clock mono" id="clock"></p>
-      <dl class="facts" id="clock-facts"></dl>
-
-      <h3>Move time</h3>
-      <div class="btns">
-        <button class="btn" type="button" data-move="hour">+1 hour</button>
-        <button class="btn" type="button" data-move="six">+6 hours</button>
-        <button class="btn" type="button" data-move="next">Next day, same time</button>
-        <button class="btn" type="button" data-move="skip">Skip a day</button>
-        <button class="btn" type="button" data-move="dst">Next clock change</button>
-      </div>
-
-      <h3>Act</h3>
-      <div class="btns">
-        <button class="btn primary" type="button" id="do-checkin">Check in</button>
-        <button class="btn" type="button" id="do-match">Play a match</button>
-        <button class="btn" type="button" id="do-freeze">Give a freeze</button>
-      </div>
-
-      <h3>Settings</h3>
-      <div class="fields">
-        <div class="field">
-          <label for="tz">Time zone (change it to travel)</label>
-          <select id="tz"></select>
-        </div>
-        <div class="field">
-          <label for="grace">Grace window</label>
-          <select id="grace">
-            <option value="0">None</option>
-            <option value="60">60 minutes</option>
-            <option value="120">120 minutes</option>
-          </select>
-        </div>
-        <div class="field">
-          <label for="daystart">Day starts at</label>
-          <select id="daystart">
-            <option value="0">00:00</option>
-            <option value="240">04:00</option>
-          </select>
-        </div>
-      </div>
-    </section>
-
-    <div class="side">
-      <section class="card" aria-labelledby="streak-h">
-        <h2 id="streak-h">Streak</h2>
-        <div id="streak"></div>
+  <section class="sec" id="play" aria-labelledby="play-h">
+    <div class="sec-head">
+      <h2 id="play-h">Playground</h2>
+      <p>A simulated user with a clock you control. Every value below is returned by the library, running in your browser.</p>
+    </div>
+    <noscript><p class="card notice">The playground needs JavaScript. The library itself runs in Node and PHP without a browser.</p></noscript>
+    <p class="card notice bad" id="err" role="alert" hidden></p>
+    <div class="stack">
+      <section class="card scen" aria-labelledby="scen-h">
+        <div class="card-h"><span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 5.5v13l10-6.5-10-6.5z"/></svg></span><h3 id="scen-h">Start here: pick a scenario</h3></div>
+        <ol class="steps">
+          <li>Pick a scenario. The first one is loaded.</li>
+          <li>Move the clock or change the time zone.</li>
+          <li>Check in and watch the streak calendar.</li>
+        </ol>
+        <div class="btns" id="scenarios" role="group" aria-labelledby="scen-h"></div>
+        <p class="hint" id="hint" aria-live="polite"></p>
       </section>
-      <section class="card" aria-labelledby="level-h">
-        <h2 id="level-h">Level</h2>
-        <div id="level"></div>
-      </section>
-      <section class="card" aria-labelledby="quests-h">
-        <h2 id="quests-h">Quests</h2>
-        <div id="quests"></div>
-      </section>
-      <section class="card" aria-labelledby="board-h">
-        <div class="head-row">
-          <h2 id="board-h">Weekly leaderboard</h2>
-          <div class="inline-field">
-            <label for="tie">Ties</label>
-            <select id="tie">
-              <option value="shared">shared</option>
-              <option value="dense">dense</option>
-              <option value="ordinal">ordinal</option>
-            </select>
+
+      <div class="play">
+        <section class="card streak-card" aria-labelledby="streak-h">
+          <div class="card-h"><span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c.4 3.4 4.5 5.2 4.5 9.7a4.5 4.5 0 0 1-9 0c0-1.5.5-2.8 1.4-3.9.3 1.5 1 2.5 2.1 3C11 8.6 11.3 5.7 12 3z"/></svg></span><h3 id="streak-h">Streak</h3><span class="end" id="streak-tag"></span></div>
+          <div id="streak"></div>
+        </section>
+
+        <section class="card" aria-labelledby="clock-h">
+          <div class="card-h"><span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg></span><h3 id="clock-h">User's clock</h3></div>
+          <p class="clock mono" id="clock"></p>
+          <dl class="facts" id="clock-facts"></dl>
+
+          <h4>Move time</h4>
+          <div class="btns">
+            <button class="btn" type="button" data-move="hour">+1 hour</button>
+            <button class="btn" type="button" data-move="six">+6 hours</button>
+            <button class="btn" type="button" data-move="next">Next day, same time</button>
+            <button class="btn" type="button" data-move="skip">Skip a day</button>
+            <button class="btn" type="button" data-move="dst">Next clock change</button>
           </div>
-        </div>
-        <div id="board"></div>
+
+          <h4>Act</h4>
+          <div class="btns">
+            <button class="btn primary" type="button" id="do-checkin">Check in</button>
+            <button class="btn" type="button" id="do-match">Play a match</button>
+            <button class="btn" type="button" id="do-freeze">Give a freeze</button>
+          </div>
+          <p class="last small" id="last" aria-live="polite"></p>
+
+          <h4>Settings</h4>
+          <div class="fields">
+            <div class="field">
+              <label for="tz">Time zone (change it to travel)</label>
+              <select id="tz"></select>
+            </div>
+            <div class="field">
+              <label for="grace">Grace window</label>
+              <select id="grace">
+                <option value="0">None</option>
+                <option value="60">60 minutes</option>
+                <option value="120">120 minutes</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="daystart">Day starts at</label>
+              <select id="daystart">
+                <option value="0">00:00</option>
+                <option value="240">04:00</option>
+              </select>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <div class="trio">
+        <section class="card" aria-labelledby="level-h">
+          <div class="card-h"><span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 20v-5M12 20V10M19 20V4"/></svg></span><h3 id="level-h">Level</h3></div>
+          <div id="level"></div>
+        </section>
+        <section class="card" aria-labelledby="quests-h">
+          <div class="card-h"><span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><path d="M12 12h.01"/></svg></span><h3 id="quests-h">Quests</h3></div>
+          <div id="quests"></div>
+        </section>
+        <section class="card" aria-labelledby="board-h">
+          <div class="card-h"><span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4h8v5a4 4 0 0 1-8 0V4zM8 6H5a3 3 0 0 0 3 3M16 6h3a3 3 0 0 1-3 3M12 13v4M8.5 20h7"/></svg></span><h3 id="board-h">Leaderboard</h3>
+            <div class="inline-field end">
+              <label for="tie">Ties</label>
+              <select id="tie">
+                <option value="shared">shared</option>
+                <option value="dense">dense</option>
+                <option value="ordinal">ordinal</option>
+              </select>
+            </div>
+          </div>
+          <div id="board"></div>
+        </section>
+      </div>
+
+      <section class="card" aria-labelledby="log-h">
+        <div class="card-h"><span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6h11M9 12h11M9 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01"/></svg></span><h3 id="log-h">What happened</h3></div>
+        <div id="log"></div>
+      </section>
+
+      <section class="card" aria-labelledby="call-h">
+        <div class="card-h"><span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 8l-4 4 4 4M15 8l4 4-4 4"/></svg></span><h3 id="call-h">Last library call</h3></div>
+        <p class="muted small lead">The exact input and output of the most recent call, straight from the library.</p>
+        <pre class="code" id="call"></pre>
       </section>
     </div>
-  </div>
-
-  <section class="card block" aria-labelledby="log-h">
-    <h2 id="log-h">What happened</h2>
-    <div id="log"></div>
   </section>
 
-  <section class="card block" aria-labelledby="call-h">
-    <h2 id="call-h">Last library call</h2>
-    <p class="muted small">The exact input and output of the most recent call, straight from the library.</p>
-    <pre class="code" id="call"></pre>
+  <section class="sec" id="use" aria-labelledby="use-h">
+    <div class="sec-head">
+      <h2 id="use-h">Use it in your project</h2>
+      <p>Load the state you store, call a function, save the state it returns. The JavaScript and PHP versions take the same options, and both pass the same {{VECTOR_COUNT}} shared test vectors.</p>
+    </div>
+    <div class="card">
+      <div class="tabs" role="tablist" aria-label="Language">
+        <button class="tab" type="button" role="tab" id="tab-js" aria-controls="panel-js" aria-selected="true">JavaScript</button>
+        <button class="tab" type="button" role="tab" id="tab-php" aria-controls="panel-php" aria-selected="false" tabindex="-1">PHP</button>
+      </div>
+      <div role="tabpanel" id="panel-js" aria-labelledby="tab-js">
+        <div class="snip">
+          <div class="snip-top"><span>Install (Node 20+)</span><button class="btn copy" type="button" data-copy="js-install" data-name="JavaScript install command">Copy</button></div>
+          <pre class="code" id="js-install" tabindex="0" role="region" aria-label="JavaScript install command">npm install github:moonetix/gamification-kit</pre>
+        </div>
+        <div class="snip">
+          <div class="snip-top"><span>Daily check-in</span><button class="btn copy" type="button" data-copy="js-use" data-name="JavaScript example">Copy</button></div>
+          <pre class="code" id="js-use" tabindex="0" role="region" aria-label="JavaScript example">import { checkIn, streakStatus } from 'gamification-kit';
+
+const timeZone = 'America/New_York'; // the user's zone, saved on their profile
+const at = 1794450600; // 2026-11-11 21:30 in New York; in production Math.floor(Date.now() / 1000)
+
+// Daily check-in: load the saved state, check in, save the returned state.
+const saved = { lastDate: '2026-11-09', streak: 4, longest: 9, freezes: 1 };
+const { state, result } = checkIn(saved, { at, timeZone });
+console.log(JSON.stringify({ streak: result.streak, usedFreezes: result.usedFreezes, lastDate: state.lastDate }));
+// -&gt; {"streak":5,"usedFreezes":1,"lastDate":"2026-11-11"}
+
+// An hour later: today is done, and the streak lasts until Nov 13 starts in New York.
+console.log(JSON.stringify(streakStatus(state, { at: at + 3600, timeZone })));
+// -&gt; {"alive":true,"streak":5,"checkedInToday":true,"freezesNeeded":0,"endsAt":1794546000,"cycleDay":5}</pre>
+        </div>
+      </div>
+      <div role="tabpanel" id="panel-php" aria-labelledby="tab-php" hidden>
+        <div class="snip">
+          <div class="snip-top"><span>Install (PHP 8.1+)</span><button class="btn copy" type="button" data-copy="php-install" data-name="PHP install commands">Copy</button></div>
+          <pre class="code" id="php-install" tabindex="0" role="region" aria-label="PHP install commands">composer config repositories.gamification-kit vcs https://github.com/moonetix/gamification-kit
+composer require moonetix/gamification-kit:^1.0</pre>
+        </div>
+        <div class="snip">
+          <div class="snip-top"><span>Daily check-in</span><button class="btn copy" type="button" data-copy="php-use" data-name="PHP example">Copy</button></div>
+          <pre class="code" id="php-use" tabindex="0" role="region" aria-label="PHP example">require 'vendor/autoload.php';
+
+use Moonetix\Gamification\Gamification as G;
+
+$timeZone = 'America/New_York'; // the user's zone, saved on their profile
+$at = 1794450600; // 2026-11-11 21:30 in New York; in production time()
+
+// Daily check-in: load the saved state, check in, save the returned state.
+$saved = ['lastDate' =&gt; '2026-11-09', 'streak' =&gt; 4, 'longest' =&gt; 9, 'freezes' =&gt; 1];
+['state' =&gt; $state, 'result' =&gt; $result] = G::checkIn($saved, ['at' =&gt; $at, 'timeZone' =&gt; $timeZone]);
+echo json_encode(['streak' =&gt; $result['streak'], 'usedFreezes' =&gt; $result['usedFreezes'], 'lastDate' =&gt; $state['lastDate']]), "\n";
+// -&gt; {"streak":5,"usedFreezes":1,"lastDate":"2026-11-11"}
+
+// An hour later: today is done, and the streak lasts until Nov 13 starts in New York.
+echo json_encode(G::streakStatus($state, ['at' =&gt; $at + 3600, 'timeZone' =&gt; $timeZone])), "\n";
+// -&gt; {"alive":true,"streak":5,"checkedInToday":true,"freezesNeeded":0,"endsAt":1794546000,"cycleDay":5}</pre>
+        </div>
+      </div>
+      <p class="sr" id="copy-note" role="status" aria-live="polite"></p>
+      <p class="small muted note">Use these mechanics for XP, levels and badges, not for a currency that has money-like value. The product side is covered in the Moonetix Academy guide <a href="https://moonetix.com/academy/monetization/rewards-app-retention?from=github-pages-gamification-kit">Rewards app retention: bonuses, streaks and levels</a>.</p>
+    </div>
   </section>
 
-  <section class="card block" aria-labelledby="use-h">
-    <h2 id="use-h">Use it</h2>
-    <p>Load the state you store, call a function, save the state it returns. Instants are integer Unix seconds and zones are IANA names.</p>
-    <pre class="code">npm install github:moonetix/gamification-kit
-
-import { checkIn } from 'gamification-kit';
-
-const { state, result } = checkIn(saved, {
-  at: Math.floor(Date.now() / 1000),
-  timeZone: 'America/New_York',
-});</pre>
-    <p class="small muted">A PHP port with the same option names and the same test vectors lives in <code>php/</code>. Use these mechanics for XP, levels and badges, not for currency that has money-like value.</p>
+  <section class="band" aria-labelledby="band-h">
+    <div class="band-text">
+      <h2 id="band-h">Made by Moonetix</h2>
+      <p>Moonetix is an affiliate network: publishers add its offerwall to an app, game, website, bot or community, and users earn the publisher's own currency by completing offers.</p>
+    </div>
+    <div class="band-cta">
+      <a class="btn" href="https://github.com/moonetix/gamification-kit"><svg class="bi" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 3.6l2.6 5.3 5.8.8-4.2 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8L3.6 9.7l5.8-.8L12 3.6z"/></svg>Star on GitHub</a>
+      <a class="btn primary" href="https://moonetix.com/register?from=github-pages-gamification-kit">Sign up free</a>
+    </div>
   </section>
 </main>
 
@@ -145,6 +247,7 @@ const { state, result } = checkIn(saved, {
     <span>Made by <a href="https://moonetix.com">Moonetix</a></span>
   </div>
 </footer>
+<script type="module" src="use.js"></script>
 <script type="module" src="app.js"></script>
 </body>
 </html>

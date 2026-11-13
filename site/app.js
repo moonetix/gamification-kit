@@ -52,6 +52,25 @@ const BOTS = [
   { id: 'zoe', score: 60 },
 ];
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const WINDOW = 14;
+const svg = (d) => `<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="${d}"/></svg>`;
+const SNOW = 'M12 3v18M4.2 7.5l15.6 9M19.8 7.5l-15.6 9';
+const MARKS = {
+  counted: svg('M5 12.5l4.5 4.5L19 7.5'),
+  freeze: svg(SNOW),
+  pending: svg(SNOW),
+  missed: svg('M6.5 6.5l11 11M17.5 6.5l-11 11'),
+  open: '',
+  none: '',
+};
+const LEGEND = [
+  ['counted', 'Counted'],
+  ['freeze', 'Freeze used'],
+  ['pending', 'Freeze due at next check-in'],
+  ['missed', 'Missed, streak broke'],
+  ['open', 'Open'],
+  ['none', 'No check-in'],
+];
 
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
@@ -70,6 +89,7 @@ function fresh(tz, at) {
     dayStart: 0,
     tie: S ? S.tie : 'shared',
     streak: { lastDate: null, streak: 0, longest: 0, freezes: 0, totalDays: 0 },
+    days: {},
     xp: 0,
     cap: null,
     quests: {},
@@ -175,6 +195,13 @@ function doCheckIn() {
   const options = streakOptions();
   const { state, result } = checkIn(before, options);
   S.streak = state;
+  if (result.counted) {
+    if (before.lastDate !== null) {
+      const kind = result.broken ? 'missed' : 'freeze';
+      for (let d = addDays(before.lastDate, 1); d < state.lastDate; d = addDays(d, 1)) S.days[d] = { kind };
+    }
+    S.days[state.lastDate] = { kind: 'counted', grace: result.usedGrace, streak: result.streak };
+  }
   S.call = { name: 'checkIn', args: [before, options], result };
   let text;
   let tone = 'good';
@@ -330,9 +357,33 @@ const SCENARIOS = [
       doCheckIn();
     },
   },
+  {
+    label: 'Freeze, then a break',
+    tz: 'Europe/Budapest',
+    hint: 'The user holds one freeze. It covers the missed 2026-11-05, so the streak goes on to 4. Then two days are missed with no freeze left: the streak breaks and the next check-in starts again at 1.',
+    run() {
+      setWall('2026-11-02', '19:00');
+      doFreeze();
+      setWall('2026-11-02', '19:05');
+      doCheckIn();
+      setWall('2026-11-03', '19:00');
+      doCheckIn();
+      setWall('2026-11-04', '19:00');
+      doCheckIn();
+      setWall('2026-11-06', '19:00');
+      doCheckIn();
+      setWall('2026-11-09', '19:00');
+      doCheckIn();
+    },
+  },
 ];
 
+function markPicked(id) {
+  for (const b of document.querySelectorAll('#scenarios button')) b.setAttribute('aria-pressed', String(b.dataset.sc === String(id)));
+}
+
 function runScenario(sc) {
+  markPicked(SCENARIOS.indexOf(sc));
   S = fresh(sc.tz, 0);
   S.grace = sc.grace ?? 0;
   sc.run();
@@ -349,6 +400,7 @@ function startNow() {
     tz = 'UTC';
   }
   if (!ZONES.includes(tz)) ZONES.push(tz);
+  markPicked('now');
   S = fresh(tz, Math.floor(Date.now() / 1000));
   S.hint = `Empty state in ${tz} at the current time. Check in, move the clock and change the zone.`;
   render();
@@ -375,6 +427,9 @@ function renderClock() {
   $('daystart').value = String(S.dayStart);
   $('tie').value = S.tie;
   $('hint').textContent = S.hint;
+  const last = S.log[0];
+  $('last').textContent = last ? `Last action: ${last.action}. ${last.result}${last.action === 'Check in' && last.xp ? `, +${last.xp} XP` : ''}.` : 'No action yet. Press Check in.';
+  $('last').className = `last small ${last ? last.tone : ''}`.trim();
 }
 
 function bar(bps, label) {
@@ -382,35 +437,104 @@ function bar(bps, label) {
   return `<div class="bar" role="progressbar" aria-label="${esc(label)}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(bps / 100)}"><span data-w="${pct}"></span></div>`;
 }
 
+function dayView() {
+  const options = streakOptions();
+  const st = streakStatus(S.streak, options);
+  const next = checkIn(S.streak, options).result;
+  const today = localDate(S.at, S.tz, { dayStartMinutes: S.dayStart });
+  const last = S.streak.lastDate;
+  const view = { ...S.days };
+  if (!next.alreadyCheckedIn) {
+    if (last !== null) {
+      for (let d = addDays(last, 1); d < next.localDate; d = addDays(d, 1)) view[d] = { kind: next.broken ? 'missed' : 'pending', ahead: true };
+    }
+    view[next.localDate] = { kind: 'open', target: true };
+    if (today !== next.localDate) view[today] = { kind: 'open' };
+  }
+  let runStart = null;
+  if (st.alive) {
+    for (let d = last; S.days[d] && S.days[d].kind !== 'missed'; d = addDays(d, -1)) {
+      runStart = d;
+      if (S.days[d].kind === 'counted' && S.days[d].streak === 1) break;
+    }
+  }
+  const end = last !== null && last > today ? last : today;
+  const cells = [];
+  for (let i = WINDOW - 1; i >= 0; i--) {
+    const date = addDays(end, -i);
+    const v = view[date] ?? { kind: 'none' };
+    cells.push({ date, ...v, today: date === today, run: runStart !== null && date >= runStart && date <= last });
+  }
+  return { st, next, today, cells };
+}
+
+function dayText(c) {
+  if (c.kind === 'counted') return `counted${c.grace ? ' through the grace window' : ''}, streak ${c.streak}`;
+  if (c.kind === 'freeze') return 'covered by a freeze';
+  if (c.kind === 'pending') return 'not counted, the next check-in spends a freeze on it';
+  if (c.kind === 'missed') return c.ahead ? 'missed, the streak has ended' : 'missed, the streak broke';
+  if (c.kind === 'open') return c.target ? 'open, a check-in now counts for this day' : 'not counted yet';
+  return 'no check-in';
+}
+
 function renderStreak() {
-  const st = streakStatus(S.streak, streakOptions());
+  const { st, next, cells } = dayView();
   const ends = st.endsAt === null ? 'No active streak' : `${fmtLocal(st.endsAt, S.tz)} <span class="nowrap">(in ${fmtSpan(st.endsAt - S.at)})</span>`;
-  const cells = SCHEDULE.map((_, i) => {
+  const reward = SCHEDULE.map((_, i) => {
     const day = i + 1;
     const on = st.alive && st.cycleDay === day;
     return `<li class="${on ? 'on' : ''}"${on ? ' aria-current="true"' : ''}><span>Day ${day}</span><b>${streakReward(SCHEDULE, day)}</b></li>`;
   }).join('');
+  let tag = '<span class="tag warn">Open today</span>';
+  if (S.streak.lastDate === null) tag = '<span class="tag">Not started</span>';
+  else if (!st.alive) tag = '<span class="tag bad">Ended</span>';
+  else if (st.checkedInToday) tag = '<span class="tag good">Counted today</span>';
+  $('streak-tag').innerHTML = tag;
+  const count = (kind) => cells.filter((c) => c.kind === kind).length;
+  const pending = count('pending');
+  const notes = [`${count('counted')} counted, ${count('freeze')} covered by a freeze, ${count('missed')} missed.`];
+  if (pending) notes.push(`The next check-in spends ${pending} freeze${pending > 1 ? 's' : ''}.`);
+  if (S.streak.lastDate !== null && !st.alive) notes.push('The streak has ended, the next check-in starts again at 1.');
+  if (next.usedGrace) notes.push('The grace window is open: a check-in now counts for yesterday.');
+  const week = cells.slice(0, 7).map((c) => `<span>${DAYS[weekday(c.date)]}</span>`).join('');
+  const days = cells.map((c) => {
+    const text = `${DAYS[weekday(c.date)]} ${c.date}: ${dayText(c)}${c.today ? ', today' : ''}${c.run ? ', in the current streak' : ''}`;
+    return `<li class="day k-${c.kind}${c.run ? ' run' : ''}${c.today ? ' today' : ''}" title="${esc(text)}"><span class="day-n" aria-hidden="true">${Number(c.date.slice(8))}</span><span class="mk" aria-hidden="true">${MARKS[c.kind]}</span><span class="sr">${esc(text)}</span></li>`;
+  }).join('');
+  const legend = LEGEND.filter(([kind]) => kind !== 'pending' || pending).map(([kind, label]) => `<li class="k-${kind}"><span class="mk" aria-hidden="true">${MARKS[kind]}</span>${label}</li>`).join('');
   $('streak').innerHTML = `
-    <p class="big"><b>${st.streak}</b> <span>day${st.streak === 1 ? '' : 's'}</span></p>
+    <p class="big"><b>${st.streak}</b> <span>day${st.streak === 1 ? '' : 's'} in a row</span></p>
+    <div class="cal-top"><h4>Last ${WINDOW} days in the user's zone</h4><span class="small muted mono">${cells[0].date} to ${cells[WINDOW - 1].date}</span></div>
+    <div class="wk" aria-hidden="true">${week}</div>
+    <ol class="cal" aria-label="Last ${WINDOW} days, oldest first">${days}</ol>
+    <ul class="legend" aria-label="Legend">${legend}<li class="k-today"><span class="mk" aria-hidden="true"></span>Today</li><li class="k-run"><span class="mk" aria-hidden="true"></span>Current streak</li></ul>
+    <p class="small cal-note">${notes.join(' ')}</p>
     <dl class="facts">
       <div><dt>Longest</dt><dd>${S.streak.longest}</dd></div>
       <div><dt>Freezes held</dt><dd>${S.streak.freezes}</dd></div>
-      <div><dt>Counted today</dt><dd>${st.checkedInToday ? 'Yes' : 'No'}</dd></div>
+      <div><dt>Counted days, total</dt><dd>${S.streak.totalDays}</dd></div>
       <div><dt>Ends without a check-in</dt><dd>${ends}</dd></div>
     </dl>
-    <p class="small muted">Check-in XP, a ${CYCLE}-day cycle from <code>streakReward</code>:</p>
-    <ol class="cycle">${cells}</ol>`;
+    <p class="small muted cycle-h">Check-in XP, a ${CYCLE}-day cycle from <code>streakReward</code>:</p>
+    <ol class="cycle">${reward}</ol>`;
 }
 
 function renderLevel() {
   const lv = levelForXp(CURVE, S.xp);
   const cap = applyXpCap(S.cap, { amount: 0, at: S.at, timeZone: S.tz, dailyCap: DAILY_CAP, dayStartMinutes: S.dayStart });
-  const steps = [2, 3, 4, 5, 6, 7].map((l) => `L${l} ${num(xpForLevel(CURVE, l))}`).join(', ');
+  const first = Math.max(1, lv.level - 1);
+  const ladder = Array.from({ length: 5 }, (_, i) => first + i).map((l) => {
+    const need = xpForLevel(CURVE, l);
+    const on = l === lv.level;
+    const state = l < lv.level ? 'Reached' : on ? 'Current' : `${num(need - lv.xp)} XP to go`;
+    return `<li class="${on ? 'on' : ''}"${on ? ' aria-current="true"' : ''}><span>Level ${l}</span><span class="state">${state}</span><b>${num(need)} XP</b></li>`;
+  }).join('');
   $('level').innerHTML = `
     <p class="big"><b>${lv.level}</b> <span>${num(lv.xp)} XP total</span></p>
     ${bar(lv.progressBps, `Progress to level ${lv.level + 1}`)}
     <p class="small">${num(lv.xpIntoLevel)} of ${num(lv.xpForNextLevel)} XP into level ${lv.level}, ${num(lv.xpToNextLevel)} to level ${lv.level + 1} (${num(lv.progressBps)} bps)</p>
-    <p class="small muted">Curve 100 x (L - 1)^2: ${steps}</p>
+    <p class="small muted ladder-h">Curve 100 x (L - 1)^2, thresholds from <code>xpForLevel</code>:</p>
+    <ol class="ladder">${ladder}</ol>
     <p class="small">Today: ${num(DAILY_CAP - cap.remaining)} of ${num(DAILY_CAP)} XP granted, cap resets ${fmtLocal(cap.resetsAt, S.tz)}</p>`;
 }
 
@@ -423,7 +547,8 @@ function renderQuests() {
       ${bar(pct, q.label)}
       <p class="small muted"><span class="mono">${esc(r.periodKey)}</span>, resets ${fmtLocal(r.resetsAt, S.tz)}</p>
     </li>`;
-  }).join('')}</ul>`;
+  }).join('')}</ul>
+    <p class="small muted quests-note">Progress resets when the period key changes: daily at the day start, weekly on Monday, monthly on the 1st, all in the user's zone.</p>`;
 }
 
 function renderBoard() {
@@ -471,44 +596,57 @@ function render() {
   for (const el of document.querySelectorAll('.bar span[data-w]')) el.style.width = `${el.dataset.w}%`;
 }
 
-function act(fn) {
-  return () => {
-    S.hint = '';
-    fn();
-    render();
+function guard(fn) {
+  return (...args) => {
+    try {
+      $('err').hidden = true;
+      fn(...args);
+    } catch (e) {
+      $('err').textContent = `The library rejected that step: ${e.message}`;
+      $('err').hidden = false;
+    }
   };
 }
 
-$('scenarios').innerHTML = SCENARIOS.map((sc, i) => `<button class="btn" type="button" data-sc="${i}">${esc(sc.label)}</button>`).join('') +
-  '<button class="btn" type="button" data-sc="now">Start empty, now</button>';
-$('scenarios').addEventListener('click', (ev) => {
+function act(fn) {
+  return guard(() => {
+    S.hint = '';
+    fn();
+    render();
+  });
+}
+
+const TICK = '<svg class="tick" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+$('scenarios').innerHTML = SCENARIOS.map((sc, i) => `<button class="btn" type="button" data-sc="${i}" aria-pressed="false">${TICK}${esc(sc.label)}</button>`).join('') +
+  `<button class="btn" type="button" data-sc="now" aria-pressed="false">${TICK}Start empty, now</button>`;
+$('scenarios').addEventListener('click', guard((ev) => {
   const b = ev.target.closest('button[data-sc]');
   if (!b) return;
   if (b.dataset.sc === 'now') startNow();
   else runScenario(SCENARIOS[Number(b.dataset.sc)]);
-});
-document.querySelectorAll('[data-move]').forEach((b) => b.addEventListener('click', () => move(b.dataset.move)));
+}));
+document.querySelectorAll('[data-move]').forEach((b) => b.addEventListener('click', guard(() => move(b.dataset.move))));
 $('do-checkin').addEventListener('click', act(doCheckIn));
 $('do-match').addEventListener('click', act(doMatch));
 $('do-freeze').addEventListener('click', act(doFreeze));
-$('tz').addEventListener('change', (ev) => {
+$('tz').addEventListener('change', guard((ev) => {
   const from = S.tz;
   S.tz = ev.target.value;
   addLog(`Change zone ${city(from)} to ${city(S.tz)}`, `Same instant, local clock now ${fmtLocal(S.at, S.tz)}`);
   S.hint = '';
   render();
-});
-$('grace').addEventListener('change', (ev) => {
+}));
+$('grace').addEventListener('change', guard((ev) => {
   S.grace = Number(ev.target.value);
   render();
-});
-$('daystart').addEventListener('change', (ev) => {
+}));
+$('daystart').addEventListener('change', guard((ev) => {
   S.dayStart = Number(ev.target.value);
   render();
-});
-$('tie').addEventListener('change', (ev) => {
+}));
+$('tie').addEventListener('change', guard((ev) => {
   S.tie = ev.target.value;
   render();
-});
+}));
 
-runScenario(SCENARIOS[0]);
+guard(() => runScenario(SCENARIOS[0]))();
