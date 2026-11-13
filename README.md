@@ -2,6 +2,7 @@
 
 **Daily check-ins, streaks, XP levels, quests, leaderboards and caps that stay correct across time zones and daylight saving time. Same behavior in JavaScript and PHP.**
 
+[![Live demo](https://img.shields.io/badge/live%20demo-playground-0e7a48)](https://moonetix.github.io/gamification-kit/)
 [![CI](https://github.com/moonetix/gamification-kit/actions/workflows/ci.yml/badge.svg)](https://github.com/moonetix/gamification-kit/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 [![Zero dependencies](https://img.shields.io/badge/dependencies-zero-brightgreen)](package.json)
@@ -11,7 +12,7 @@
 
 Maintained by [Moonetix](https://moonetix.com).
 
-Most streak bugs are time zone bugs. A server that adds 86,400 seconds, or takes the date in UTC, breaks a New York user's streak twice a year and starts a Sydney user's "new day" before lunch. This kit does the calendar work in each user's own IANA time zone, with written rules for days that last 23, 23.5, 24.5 or 25 hours and for midnights that never happen. The rest is integer math over state you store yourself, in whatever database you already use.
+Most streak bugs are time zone bugs. A server that adds 86,400 seconds, or takes the date in UTC, breaks a New York user's streak twice a year and starts a Sydney user's "new day" before lunch. This kit does the calendar work in each user's own IANA time zone, with written rules for days that last 23, 23.5, 24.5 or 25 hours and for midnights that never happen. The rest is integer math over state you store yourself, in whatever database you already use. The [live playground](https://moonetix.github.io/gamification-kit/) runs the library in your browser: move the clock, skip days, fly across zones and cross DST changes, and watch the streak stay correct.
 
 - **JavaScript:** ESM, zero dependencies, TypeScript declarations. Time zones through `Intl`.
 - **PHP:** 8.1+, zero dependencies. Time zones through `DateTimeZone`.
@@ -329,7 +330,7 @@ node scripts/check-examples.mjs php    # the same for PHP (needs composer dump-a
 
 ## About Moonetix
 
-Moonetix is an affiliate network. Publishers add its offerwall to an app, game, website, bot or community, and users earn the publisher's own currency by completing offers. Publisher accounts: [moonetix.com/register](https://moonetix.com/register).
+Moonetix is an affiliate network. Publishers add its offerwall to an app, game, website, bot or community, and users earn the publisher's own currency by completing offers. Publisher accounts: [moonetix.com/register](https://moonetix.com/register?from=github-gamification-kit).
 
 Other open source from Moonetix: [reward-economy-kit](https://github.com/moonetix/reward-economy-kit), [country-tiers](https://github.com/moonetix/country-tiers), [datacenter-ip-ranges](https://github.com/moonetix/datacenter-ip-ranges), [offerwall-fraud-playbook](https://github.com/moonetix/offerwall-fraud-playbook), [referral-engine](https://github.com/moonetix/referral-engine), [signup-guard](https://github.com/moonetix/signup-guard), [awesome-offerwalls](https://github.com/moonetix/awesome-offerwalls), [offerwall-postback-handlers](https://github.com/moonetix/offerwall-postback-handlers).
 
