@@ -53,13 +53,12 @@ const BOTS = [
 ];
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const WINDOW = 14;
-const svg = (d) => `<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="${d}"/></svg>`;
-const SNOW = 'M12 3v18M4.2 7.5l15.6 9M19.8 7.5l-15.6 9';
+const icon = (id) => `<svg class="ic" aria-hidden="true" focusable="false"><use href="#i-${id}"/></svg>`;
 const MARKS = {
-  counted: svg('M5 12.5l4.5 4.5L19 7.5'),
-  freeze: svg(SNOW),
-  pending: svg(SNOW),
-  missed: svg('M6.5 6.5l11 11M17.5 6.5l-11 11'),
+  counted: icon('check'),
+  freeze: icon('snow'),
+  pending: icon('snow'),
+  missed: icon('x'),
   open: '',
   none: '',
 };
@@ -477,19 +476,47 @@ function dayText(c) {
   return 'no check-in';
 }
 
-function renderStreak() {
-  const { st, next, cells } = dayView();
+function streakTag(st) {
+  if (S.streak.lastDate === null) return '<span class="tag">Not started</span>';
+  if (!st.alive) return '<span class="tag bad">Ended</span>';
+  if (st.checkedInToday) return '<span class="tag good">Counted today</span>';
+  return '<span class="tag warn">Open today</span>';
+}
+
+function dayCell(c) {
+  const text = `${DAYS[weekday(c.date)]} ${c.date}: ${dayText(c)}${c.today ? ', today' : ''}${c.run ? ', in the current streak' : ''}`;
+  return `<li class="day k-${c.kind}${c.run ? ' run' : ''}${c.today ? ' today' : ''}" title="${esc(text)}"><span class="day-n" aria-hidden="true">${Number(c.date.slice(8))}</span><span class="mk" aria-hidden="true">${MARKS[c.kind]}</span><span class="sr">${esc(text)}</span></li>`;
+}
+
+function renderHero({ st, cells }) {
+  const lv = levelForXp(CURVE, S.xp);
+  const w = wall(S.at, S.tz);
+  const len = dayLength(w.date, S.tz);
+  const strip = cells.slice(-7);
+  $('hero-zone').textContent = S.tz;
+  $('hero-preview').innerHTML = `
+    <div class="pv-top">
+      <p class="pv-num"><b>${st.streak}</b><span>day${st.streak === 1 ? '' : 's'} in a row</span></p>
+      ${streakTag(st)}
+    </div>
+    <p class="pv-when"><span class="mono">${fmtLocal(S.at, S.tz)}</span><span>in ${esc(city(S.tz))}</span>${len !== 86400 ? `<span class="tag warn">${fmtHours(len)} day</span>` : ''}</p>
+    <div class="wk">${strip.map((c) => `<span>${DAYS[weekday(c.date)]}</span>`).join('')}</div>
+    <ol class="cal">${strip.map(dayCell).join('')}</ol>
+    <div class="pv-xp">
+      <p class="pv-xp-top"><b>Level ${lv.level}</b><span>${num(lv.xp)} XP</span></p>
+      <div class="bar"><span data-w="${(lv.progressBps / 100).toFixed(2)}"></span></div>
+      <p class="pv-xp-sub"><span>${num(lv.xpIntoLevel)} of ${num(lv.xpForNextLevel)} XP into level ${lv.level}</span><span>${num(lv.xpToNextLevel)} to level ${lv.level + 1}</span></p>
+    </div>`;
+}
+
+function renderStreak({ st, next, cells }) {
   const ends = st.endsAt === null ? 'No active streak' : `${fmtLocal(st.endsAt, S.tz)} <span class="nowrap">(in ${fmtSpan(st.endsAt - S.at)})</span>`;
   const reward = SCHEDULE.map((_, i) => {
     const day = i + 1;
     const on = st.alive && st.cycleDay === day;
     return `<li class="${on ? 'on' : ''}"${on ? ' aria-current="true"' : ''}><span>Day ${day}</span><b>${streakReward(SCHEDULE, day)}</b></li>`;
   }).join('');
-  let tag = '<span class="tag warn">Open today</span>';
-  if (S.streak.lastDate === null) tag = '<span class="tag">Not started</span>';
-  else if (!st.alive) tag = '<span class="tag bad">Ended</span>';
-  else if (st.checkedInToday) tag = '<span class="tag good">Counted today</span>';
-  $('streak-tag').innerHTML = tag;
+  $('streak-tag').innerHTML = streakTag(st);
   const count = (kind) => cells.filter((c) => c.kind === kind).length;
   const pending = count('pending');
   const notes = [`${count('counted')} counted, ${count('freeze')} covered by a freeze, ${count('missed')} missed.`];
@@ -497,10 +524,7 @@ function renderStreak() {
   if (S.streak.lastDate !== null && !st.alive) notes.push('The streak has ended, the next check-in starts again at 1.');
   if (next.usedGrace) notes.push('The grace window is open: a check-in now counts for yesterday.');
   const week = cells.slice(0, 7).map((c) => `<span>${DAYS[weekday(c.date)]}</span>`).join('');
-  const days = cells.map((c) => {
-    const text = `${DAYS[weekday(c.date)]} ${c.date}: ${dayText(c)}${c.today ? ', today' : ''}${c.run ? ', in the current streak' : ''}`;
-    return `<li class="day k-${c.kind}${c.run ? ' run' : ''}${c.today ? ' today' : ''}" title="${esc(text)}"><span class="day-n" aria-hidden="true">${Number(c.date.slice(8))}</span><span class="mk" aria-hidden="true">${MARKS[c.kind]}</span><span class="sr">${esc(text)}</span></li>`;
-  }).join('');
+  const days = cells.map(dayCell).join('');
   const legend = LEGEND.filter(([kind]) => kind !== 'pending' || pending).map(([kind, label]) => `<li class="k-${kind}"><span class="mk" aria-hidden="true">${MARKS[kind]}</span>${label}</li>`).join('');
   $('streak').innerHTML = `
     <p class="big"><b>${st.streak}</b> <span>day${st.streak === 1 ? '' : 's'} in a row</span></p>
@@ -509,14 +533,16 @@ function renderStreak() {
     <ol class="cal" aria-label="Last ${WINDOW} days, oldest first">${days}</ol>
     <ul class="legend" aria-label="Legend">${legend}<li class="k-today"><span class="mk" aria-hidden="true"></span>Today</li><li class="k-run"><span class="mk" aria-hidden="true"></span>Current streak</li></ul>
     <p class="small cal-note">${notes.join(' ')}</p>
-    <dl class="facts">
+    <dl class="kv">
       <div><dt>Longest</dt><dd>${S.streak.longest}</dd></div>
       <div><dt>Freezes held</dt><dd>${S.streak.freezes}</dd></div>
       <div><dt>Counted days, total</dt><dd>${S.streak.totalDays}</dd></div>
       <div><dt>Ends without a check-in</dt><dd>${ends}</dd></div>
     </dl>
-    <p class="small muted cycle-h">Check-in XP, a ${CYCLE}-day cycle from <code>streakReward</code>:</p>
-    <ol class="cycle">${reward}</ol>`;
+    <div class="cycle-box">
+      <p class="small muted">Check-in XP, a ${CYCLE}-day cycle from <code>streakReward</code>:</p>
+      <ol class="cycle">${reward}</ol>
+    </div>`;
 }
 
 function renderLevel() {
@@ -532,10 +558,13 @@ function renderLevel() {
   $('level').innerHTML = `
     <p class="big"><b>${lv.level}</b> <span>${num(lv.xp)} XP total</span></p>
     ${bar(lv.progressBps, `Progress to level ${lv.level + 1}`)}
-    <p class="small">${num(lv.xpIntoLevel)} of ${num(lv.xpForNextLevel)} XP into level ${lv.level}, ${num(lv.xpToNextLevel)} to level ${lv.level + 1} (${num(lv.progressBps)} bps)</p>
+    <p class="small bar-cap"><span>${num(lv.xpIntoLevel)} of ${num(lv.xpForNextLevel)} XP (${num(lv.progressBps)} bps)</span><span>${num(lv.xpToNextLevel)} to level ${lv.level + 1}</span></p>
     <p class="small muted ladder-h">Curve 100 x (L - 1)^2, thresholds from <code>xpForLevel</code>:</p>
     <ol class="ladder">${ladder}</ol>
-    <p class="small">Today: ${num(DAILY_CAP - cap.remaining)} of ${num(DAILY_CAP)} XP granted, cap resets ${fmtLocal(cap.resetsAt, S.tz)}</p>`;
+    <dl class="kv">
+      <div><dt>Granted today</dt><dd>${num(DAILY_CAP - cap.remaining)} of ${num(DAILY_CAP)} XP</dd></div>
+      <div><dt>Daily cap resets</dt><dd>${fmtLocal(cap.resetsAt, S.tz)}</dd></div>
+    </dl>`;
 }
 
 function renderQuests() {
@@ -586,8 +615,10 @@ function renderCall() {
 }
 
 function render() {
+  const view = dayView();
   renderClock();
-  renderStreak();
+  renderHero(view);
+  renderStreak(view);
   renderLevel();
   renderQuests();
   renderBoard();
@@ -616,7 +647,7 @@ function act(fn) {
   });
 }
 
-const TICK = '<svg class="tick" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+const TICK = '<svg class="ic tick" aria-hidden="true" focusable="false"><use href="#i-check"/></svg>';
 $('scenarios').innerHTML = SCENARIOS.map((sc, i) => `<button class="btn" type="button" data-sc="${i}" aria-pressed="false">${TICK}${esc(sc.label)}</button>`).join('') +
   `<button class="btn" type="button" data-sc="now" aria-pressed="false">${TICK}Start empty, now</button>`;
 $('scenarios').addEventListener('click', guard((ev) => {
