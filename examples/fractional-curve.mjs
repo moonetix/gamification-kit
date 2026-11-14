@@ -1,4 +1,4 @@
-import { tableCurve, levelForXp } from 'gamification-kit';
+import { tableCurve, levelForXp } from '@moonetix/gamification-kit';
 
 // Level L needs floor(100 x (L - 1)^1.5) XP: floor(sqrt(10000 x (L - 1)^3)) with an
 // integer square root, so every runtime builds the same table.

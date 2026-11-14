@@ -1,4 +1,4 @@
-import { checkIn, streakStatus, polynomialCurve, levelForXp, defineQuest, questProgress, applyXpCap, rankEntries } from 'gamification-kit';
+import { checkIn, streakStatus, polynomialCurve, levelForXp, defineQuest, questProgress, applyXpCap, rankEntries } from '@moonetix/gamification-kit';
 
 const timeZone = 'America/New_York'; // the user's zone, saved on their profile
 const at = 1794450600; // 2026-11-11 21:30 in New York; in production Math.floor(Date.now() / 1000)

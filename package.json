@@ -1,6 +1,6 @@
 {
-  "name": "gamification-kit",
-  "version": "1.0.0",
+  "name": "@moonetix/gamification-kit",
+  "version": "1.1.0",
   "description": "Streaks, XP levels, quests, leaderboards and caps that stay correct across time zones and DST. JavaScript and PHP.",
   "type": "module",
   "main": "./src/index.js",
@@ -39,5 +39,6 @@
     "url": "git+https://github.com/moonetix/gamification-kit.git"
   },
   "license": "MIT",
+  "publishConfig": { "access": "public" },
   "author": "Moonetix (https://moonetix.com)"
 }

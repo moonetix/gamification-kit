@@ -4,6 +4,8 @@
 
 [![Live demo](https://img.shields.io/badge/live%20demo-playground-0e7a48)](https://moonetix.github.io/gamification-kit/)
 [![CI](https://github.com/moonetix/gamification-kit/actions/workflows/ci.yml/badge.svg)](https://github.com/moonetix/gamification-kit/actions/workflows/ci.yml)
+[![npm](https://img.shields.io/npm/v/%40moonetix%2Fgamification-kit?color=004ABB)](https://www.npmjs.com/package/@moonetix/gamification-kit)
+[![Packagist](https://img.shields.io/packagist/v/moonetix/gamification-kit?color=004ABB)](https://packagist.org/packages/moonetix/gamification-kit)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 [![Zero dependencies](https://img.shields.io/badge/dependencies-zero-brightgreen)](package.json)
 [![Node 20+](https://img.shields.io/badge/node-20%2B-339933)](package.json)
@@ -58,12 +60,11 @@ flowchart TD
 
 ## Install
 
-The package is not on npm or Packagist yet. Copy it in or install from Git:
+The JavaScript package is on [npm](https://www.npmjs.com/package/@moonetix/gamification-kit) and the PHP package is on [Packagist](https://packagist.org/packages/moonetix/gamification-kit):
 
 ```bash
-npm install github:moonetix/gamification-kit
-composer config repositories.gamification-kit vcs https://github.com/moonetix/gamification-kit
-composer require moonetix/gamification-kit:^1.0
+npm install @moonetix/gamification-kit
+composer require moonetix/gamification-kit
 ```
 
 ## Quick start
@@ -71,7 +72,7 @@ composer require moonetix/gamification-kit:^1.0
 **JavaScript**
 
 ```js
-import { checkIn, streakStatus, polynomialCurve, levelForXp, defineQuest, questProgress, applyXpCap, rankEntries } from 'gamification-kit';
+import { checkIn, streakStatus, polynomialCurve, levelForXp, defineQuest, questProgress, applyXpCap, rankEntries } from '@moonetix/gamification-kit';
 
 const timeZone = 'America/New_York'; // the user's zone, saved on their profile
 const at = 1794450600; // 2026-11-11 21:30 in New York; in production Math.floor(Date.now() / 1000)
@@ -210,7 +211,7 @@ All three take an optional `maxLevel`; a table's default is its length. `levelFo
 For a fractional exponent, build a table once with integer math and use `tableCurve`. This is the 1.5 power:
 
 ```js
-import { tableCurve, levelForXp } from 'gamification-kit';
+import { tableCurve, levelForXp } from '@moonetix/gamification-kit';
 
 // Level L needs floor(100 x (L - 1)^1.5) XP: floor(sqrt(10000 x (L - 1)^3)) with an
 // integer square root, so every runtime builds the same table.

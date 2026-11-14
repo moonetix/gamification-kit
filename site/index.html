@@ -230,11 +230,11 @@
       <div role="tabpanel" id="panel-js" aria-labelledby="tab-js">
         <div class="snip">
           <div class="snip-top"><span>Install (Node 20+)</span><button class="btn copy" type="button" data-copy="js-install" data-name="JavaScript install command">Copy</button></div>
-          <pre class="code" id="js-install" tabindex="0" role="region" aria-label="JavaScript install command">npm install github:moonetix/gamification-kit</pre>
+          <pre class="code" id="js-install" tabindex="0" role="region" aria-label="JavaScript install command">npm install @moonetix/gamification-kit</pre>
         </div>
         <div class="snip">
           <div class="snip-top"><span>Daily check-in</span><button class="btn copy" type="button" data-copy="js-use" data-name="JavaScript example">Copy</button></div>
-          <pre class="code" id="js-use" tabindex="0" role="region" aria-label="JavaScript example">import { checkIn, streakStatus } from 'gamification-kit';
+          <pre class="code" id="js-use" tabindex="0" role="region" aria-label="JavaScript example">import { checkIn, streakStatus } from '@moonetix/gamification-kit';
 
 const timeZone = 'America/New_York'; // the user's zone, saved on their profile
 const at = 1794450600; // 2026-11-11 21:30 in New York; in production Math.floor(Date.now() / 1000)
@@ -252,9 +252,8 @@ console.log(JSON.stringify(streakStatus(state, { at: at + 3600, timeZone })));
       </div>
       <div role="tabpanel" id="panel-php" aria-labelledby="tab-php" hidden>
         <div class="snip">
-          <div class="snip-top"><span>Install (PHP 8.1+)</span><button class="btn copy" type="button" data-copy="php-install" data-name="PHP install commands">Copy</button></div>
-          <pre class="code" id="php-install" tabindex="0" role="region" aria-label="PHP install commands">composer config repositories.gamification-kit vcs https://github.com/moonetix/gamification-kit
-composer require moonetix/gamification-kit:^1.0</pre>
+          <div class="snip-top"><span>Install (PHP 8.1+)</span><button class="btn copy" type="button" data-copy="php-install" data-name="PHP install command">Copy</button></div>
+          <pre class="code" id="php-install" tabindex="0" role="region" aria-label="PHP install command">composer require moonetix/gamification-kit</pre>
         </div>
         <div class="snip">
           <div class="snip-top"><span>Daily check-in</span><button class="btn copy" type="button" data-copy="php-use" data-name="PHP example">Copy</button></div>
