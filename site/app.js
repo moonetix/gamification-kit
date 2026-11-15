@@ -488,34 +488,14 @@ function dayCell(c) {
   return `<li class="day k-${c.kind}${c.run ? ' run' : ''}${c.today ? ' today' : ''}" title="${esc(text)}"><span class="day-n" aria-hidden="true">${Number(c.date.slice(8))}</span><span class="mk" aria-hidden="true">${MARKS[c.kind]}</span><span class="sr">${esc(text)}</span></li>`;
 }
 
-function renderHero({ st, cells }) {
-  const lv = levelForXp(CURVE, S.xp);
-  const w = wall(S.at, S.tz);
-  const len = dayLength(w.date, S.tz);
-  const strip = cells.slice(-7);
-  $('hero-zone').textContent = S.tz;
-  $('hero-preview').innerHTML = `
-    <div class="pv-top">
-      <p class="pv-num"><b>${st.streak}</b><span>day${st.streak === 1 ? '' : 's'} in a row</span></p>
-      ${streakTag(st)}
-    </div>
-    <p class="pv-when"><span class="mono">${fmtLocal(S.at, S.tz)}</span><span>in ${esc(city(S.tz))}</span>${len !== 86400 ? `<span class="tag warn">${fmtHours(len)} day</span>` : ''}</p>
-    <div class="wk">${strip.map((c) => `<span>${DAYS[weekday(c.date)]}</span>`).join('')}</div>
-    <ol class="cal">${strip.map(dayCell).join('')}</ol>
-    <div class="pv-xp">
-      <p class="pv-xp-top"><b>Level ${lv.level}</b><span>${num(lv.xp)} XP</span></p>
-      <div class="bar"><span data-w="${(lv.progressBps / 100).toFixed(2)}"></span></div>
-      <p class="pv-xp-sub"><span>${num(lv.xpIntoLevel)} of ${num(lv.xpForNextLevel)} XP into level ${lv.level}</span><span>${num(lv.xpToNextLevel)} to level ${lv.level + 1}</span></p>
-    </div>`;
-}
-
 function renderStreak({ st, next, cells }) {
   const ends = st.endsAt === null ? 'No active streak' : `${fmtLocal(st.endsAt, S.tz)} <span class="nowrap">(in ${fmtSpan(st.endsAt - S.at)})</span>`;
-  const reward = SCHEDULE.map((_, i) => {
-    const day = i + 1;
-    const on = st.alive && st.cycleDay === day;
-    return `<li class="${on ? 'on' : ''}"${on ? ' aria-current="true"' : ''}><span>Day ${day}</span><b>${streakReward(SCHEDULE, day)}</b></li>`;
-  }).join('');
+  const days7 = SCHEDULE.map((_, i) => i + 1);
+  const on = (day) => (st.alive && st.cycleDay === day ? ' class="on"' : '');
+  const reward = `<table class="cycle"><tbody>
+      <tr><th scope="row">Day</th>${days7.map((day) => `<th scope="col"${on(day)}>${day}${on(day) ? '<span class="sr">, today in the cycle</span>' : ''}</th>`).join('')}</tr>
+      <tr><th scope="row">XP</th>${days7.map((day) => `<td${on(day)}>${streakReward(SCHEDULE, day)}</td>`).join('')}</tr>
+    </tbody></table>`;
   $('streak-tag').innerHTML = streakTag(st);
   const count = (kind) => cells.filter((c) => c.kind === kind).length;
   const pending = count('pending');
@@ -541,7 +521,7 @@ function renderStreak({ st, next, cells }) {
     </dl>
     <div class="cycle-box">
       <p class="small muted">Check-in XP, a ${CYCLE}-day cycle from <code>streakReward</code>:</p>
-      <ol class="cycle">${reward}</ol>
+      ${reward}
     </div>`;
 }
 
@@ -587,7 +567,7 @@ function renderBoard() {
   const near = aroundId(ranked, 'you', 1).map((e) => `${e.id === 'you' ? 'You' : e.id} (${e.rank})`).join(', ');
   const rows = ranked.map((e) => `<tr class="${e.id === 'you' ? 'me' : ''}"><td>${e.rank}</td><td>${e.id === 'you' ? 'You' : esc(e.id)}</td><td class="r">${num(e.score)}</td></tr>`).join('');
   $('board').innerHTML = `
-    <table><thead><tr><th scope="col">Rank</th><th scope="col">Player</th><th scope="col" class="r">XP this week</th></tr></thead><tbody>${rows}</tbody></table>
+    <table class="board"><thead><tr><th scope="col">Rank</th><th scope="col">Player</th><th scope="col" class="r">XP this week</th></tr></thead><tbody>${rows}</tbody></table>
     <p class="small muted">Week <span class="mono">${win.firstDate}</span> to <span class="mono">${win.lastDate}</span> in UTC, one zone for everyone. Around you: ${near}.</p>`;
 }
 
@@ -617,7 +597,6 @@ function renderCall() {
 function render() {
   const view = dayView();
   renderClock();
-  renderHero(view);
   renderStreak(view);
   renderLevel();
   renderQuests();
@@ -647,9 +626,8 @@ function act(fn) {
   });
 }
 
-const TICK = '<svg class="ic tick" aria-hidden="true" focusable="false"><use href="#i-check"/></svg>';
-$('scenarios').innerHTML = SCENARIOS.map((sc, i) => `<button class="btn" type="button" data-sc="${i}" aria-pressed="false">${TICK}${esc(sc.label)}</button>`).join('') +
-  `<button class="btn" type="button" data-sc="now" aria-pressed="false">${TICK}Start empty, now</button>`;
+$('scenarios').innerHTML = SCENARIOS.map((sc, i) => `<button class="opt" type="button" data-sc="${i}" aria-pressed="false">${esc(sc.label)}</button>`).join('') +
+  '<button class="opt" type="button" data-sc="now" aria-pressed="false">Start empty, now</button>';
 $('scenarios').addEventListener('click', guard((ev) => {
   const b = ev.target.closest('button[data-sc]');
   if (!b) return;
